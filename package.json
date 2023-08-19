@@ -5,12 +5,12 @@
   "types": "./lib/index.d.ts",
   "name": "@hexlink/sdk",
   "devDependencies": {
+    "@types/node": "^20.4.5",
     "gts": "^5.0.0",
-    "typescript": "~5.1.6",
-    "@types/node": "^20.4.5"
+    "typescript": "~5.1.6"
   },
   "scripts": {
-    "build": "rimraf lib.esm && rimraf tsconfig.esm.tsbuildinfo && tsc --build ./tsconfig.json",
+    "build": "tsc --build ./tsconfig.json",
     "compile": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "gts lint",
