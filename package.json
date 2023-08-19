@@ -1,0 +1,28 @@
+{
+  "description": "Hexlink Account SDK",
+  "main": "./lib/index.js",
+  "module": "./lib.esm/index.js",
+  "types": "./lib/index.d.ts",
+  "name": "@hexlink/sdk",
+  "devDependencies": {
+    "gts": "^5.0.0",
+    "typescript": "~5.1.6",
+    "@types/node": "^20.4.5"
+  },
+  "scripts": {
+    "build": "rimraf lib.esm && rimraf tsconfig.esm.tsbuildinfo && tsc --build ./tsconfig.json",
+    "compile": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "gts lint",
+    "clean": "gts clean",
+    "fix": "gts fix",
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "posttest": "npm run lint"
+  },
+  "sideEffects": false,
+  "version": "0.0.1",
+  "files": [
+    "/lib.esm"
+  ]
+}
