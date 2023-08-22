@@ -30,10 +30,8 @@ export async function getAccountInfo(
     const secondFactor = await acc.getSecondFactor();
     return {
       ...accCommon,
-      auth: {
-        primaryOwner: await acc.getNameOwner(),
-        secondaryOwner: secondFactor === ZeroAddress ? undefined : secondFactor,
-      },
+      primaryOwner: await acc.getNameOwner(),
+      secondaryOwner: secondFactor === ZeroAddress ? undefined : secondFactor,
     };
   } else {
     const hexlink = getHexlinkContract(provider);
@@ -43,9 +41,7 @@ export async function getAccountInfo(
     );
     return {
       ...accCommon,
-      auth: {
-        primaryOwner: await ns.defaultOwner(),
-      },
+      primaryOwner: await ns.defaultOwner(),
     };
   }
 }

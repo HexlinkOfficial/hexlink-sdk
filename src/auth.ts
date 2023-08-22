@@ -9,33 +9,30 @@ import {
   HEXLINK_BASE_URL,
   HEXLINK_VALIDATOR,
 } from './constant';
-import {AccountInfo} from './structs';
+import {AccountAuth, AccountInfo} from './structs';
 
 const dauthClient = new DAuth({
   baseURL: DAUTH_BASE_URL,
   clientID: DAUTH_CLEINT_ID,
 });
 
-export async function read2faSetting(
+export async function update2faSetting(
   account: AccountInfo,
   chainId: string,
   jwt: string
-): Promise<{idType: string; account: string} | undefined> {
-  if (isHexlinkValidator(account.auth!.secondaryOwner)) {
+): Promise<void> {
+  if (isHexlinkValidator(account.secondaryOwner)) {
     throw new Error('unsupported secondary owner');
   }
-  const result = await callHexlink('get2faSetting', jwt, {chainId});
-  if (result.data && result.data.setting) {
-    return result.data.setting as {idType: string; account: string};
-  }
-  return undefined;
+  const {setting} = await callHexlink('get2faSetting', jwt, {chainId});
+  account.secondFactor = setting;
 }
 
 export async function sendOtpToPrimaryOwner(
   account: AccountInfo,
   requestId: string
 ) {
-  if (!isDAuthValidator(account.auth!.primaryOwner)) {
+  if (!isDAuthValidator(account.primaryOwner)) {
     throw new Error('unsupported primary owner');
   }
   requestId = requestId.startsWith('0x') ? requestId.slice(2) : requestId;
@@ -48,21 +45,20 @@ export async function sendOtpToPrimaryOwner(
 
 export async function sendOtpToSecondaryOwner(
   account: AccountInfo,
+  auth: AccountAuth,
   chainId: string,
   data?: {idType: string; account: string}
 ) {
-  if (isHexlinkValidator(account.auth!.secondaryOwner)) {
+  if (isHexlinkValidator(account.secondaryOwner)) {
     throw new Error('unsupported secondary owner');
   }
-  if (!account.auth!.secondaryJwt) {
-    const {signed} = await callHexlink(
-      'authenticate',
-      account.auth!.primaryJwt!,
-      {chainId}
-    );
-    account.auth!.secondaryJwt = signed;
+  if (!auth!.secondaryJwt) {
+    const {signed} = await callHexlink('authenticate', auth!.primaryJwt!, {
+      chainId,
+    });
+    auth!.secondaryJwt = signed;
   }
-  await callHexlink('sendOtp', account.auth!.secondaryJwt!, data);
+  await callHexlink('sendOtp', auth!.secondaryJwt!, data);
 }
 
 export const validatePrimaryOwnerAndSign = async (
@@ -71,9 +67,6 @@ export const validatePrimaryOwnerAndSign = async (
   mode: 'proof' | 'jwt' | 'both',
   requestId: string
 ): Promise<{jwt?: string; proof?: string}> => {
-  if (!isDAuthValidator(account.auth!.primaryOwner)) {
-    throw new Error('unsupported primary owner');
-  }
   const result = await dauthClient.service.authOtpConfirm({
     code: otp,
     request_id: requestId,
@@ -84,48 +77,39 @@ export const validatePrimaryOwnerAndSign = async (
 };
 
 export const validateSecondaryOwnerAndSign = async (
-  account: AccountInfo,
+  auth: AccountAuth,
   otp: string,
   mode: 'proof' | 'jwt' | 'both',
   message: string
 ): Promise<{jwt?: string; proof?: string}> => {
-  if (!isHexlinkValidator(account.auth!.secondaryOwner)) {
-    throw new Error('unsupported secondary owner');
-  }
-  const authToken = account.auth!.secondaryJwt!;
+  await validateSecondaryOwner(auth, otp);
+  return await signWithSecondaryOwner(auth, mode, message);
+};
+
+export const validateSecondaryOwner = async (
+  auth: AccountAuth,
+  otp: string
+): Promise<void> => {
+  const authToken = auth.secondaryJwt!;
   const {success} = await callHexlink('validateOtp', authToken, {otp});
   if (!success) {
     throw new Error('failed to validate otp');
   }
+};
+
+export const signWithSecondaryOwner = async (
+  auth: AccountAuth,
+  mode: 'proof' | 'jwt' | 'both',
+  message: string
+): Promise<{jwt?: string; proof?: string}> => {
+  const authToken = auth.secondaryJwt!;
   return await callHexlink('sign', authToken, {mode, message});
 };
 
-export const validateSecondaryOwnerAndEnable = async (
-  account: AccountInfo,
-  otp: string
+export const disableSecondaryOwner = async (
+  auth: AccountAuth
 ): Promise<void> => {
-  if (!isHexlinkValidator(account.auth!.secondaryOwner)) {
-    throw new Error('unsupported secondary owner');
-  }
-  const authToken = account.auth!.secondaryJwt!;
-  const {success} = await callHexlink('validateOtp', authToken, {otp});
-  if (!success) {
-    throw new Error('failed to validate otp');
-  }
-};
-
-export const validateSecondaryOwnerAndDisable = async (
-  account: AccountInfo,
-  otp: string
-): Promise<void> => {
-  if (!isHexlinkValidator(account.auth!.secondaryOwner)) {
-    throw new Error('unsupported secondary owner');
-  }
-  const authToken = account.auth!.secondaryJwt!;
-  const {success} = await callHexlink('validateOtp', authToken, {otp});
-  if (!success) {
-    throw new Error('failed to validate otp');
-  }
+  const authToken = auth.secondaryJwt!;
   return await callHexlink('disable', authToken);
 };
 

@@ -6,7 +6,9 @@ export interface AccountInfo {
   nameHash: string; // e.g. keccak256('mailto:alice@gmail.com');
   address: string;
   version: BigInt;
-  auth: AccountAuth | null;
+  primaryOwner: string;
+  secondaryOwner?: string;
+  primaryOwnerOutdated?: boolean;
   secondFactor?: {
     idType: string;
     account: string;
@@ -14,10 +16,7 @@ export interface AccountInfo {
 }
 
 export interface AccountAuth {
-  primaryOwner: string;
   primaryJwt?: string;
-  primaryOwnerOutdated?: boolean;
-  secondaryOwner?: string;
   secondaryJwt?: string;
   secondaryData?: any;
 }

@@ -10,7 +10,7 @@ import {
   BigNumberish,
 } from 'ethers';
 
-import {AccountInfo, UserOpInfo} from './structs';
+import {AccountAuth, AccountInfo, UserOpInfo} from './structs';
 import {Account__factory} from '@hexlink/contracts';
 import {getHexlinkContract, isContract} from './utils';
 import {DUMMY_SIGNATURE, ENTRYPOINT, HEXLINK, ERC20_IFACE} from './constant';
@@ -109,31 +109,27 @@ export const buildUserOpInfo = async (
 export const signUserOpWithPrimaryOwner = async (
   account: AccountInfo,
   userOpInfo: UserOpInfo,
-  otp: string,
-  mode: 'proof' | 'both'
-) => {
+  otp: string
+): Promise<AccountAuth> => {
   const {proof, jwt} = await validatePrimaryOwnerAndSign(
     account,
     otp,
-    mode,
+    'both',
     userOpInfo.signedMessage
   );
-  if (jwt) {
-    account.auth!.primaryJwt = jwt;
-  }
   userOpInfo.primarySignature = proof!;
   userOpInfo.userOp.signature = await aggregateSignature(userOpInfo);
-  return userOpInfo;
+  return {primaryJwt: jwt};
 };
 
 export const signUserOpWithSecondaryOwner = async (
-  account: AccountInfo,
+  auth: AccountAuth,
   userOpInfo: UserOpInfo,
   otp: string,
   mode: 'proof' | 'both'
 ) => {
   const {proof} = await validateSecondaryOwnerAndSign(
-    account,
+    auth,
     otp,
     mode,
     userOpInfo.signedMessage
