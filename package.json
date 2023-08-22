@@ -24,5 +24,15 @@
   "version": "0.0.1",
   "files": [
     "/lib.esm"
-  ]
+  ],
+  "engines": {
+    "node": ">=10.6.0"
+  },
+  "dependencies": {
+    "@account-abstraction/contracts": "^0.6.0",
+    "@dauth/core": "^0.2.2",
+    "@hexlink/contracts": "^0.9.7",
+    "axios": "^1.4.0",
+    "ethers": "^6.7.1"
+  }
 }
